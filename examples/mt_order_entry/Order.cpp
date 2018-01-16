@@ -10,11 +10,12 @@ namespace orderentry
 Order::Order(const std::string & id,
     bool buy_side,
     liquibook::book::Quantity quantity,
-    std::string symbol,
+    std::string & symbol,
     liquibook::book::Price price,
     liquibook::book::Price stopPrice,
     bool aon,
-    bool ioc)
+    bool ioc,
+    const std::string & extern_order_id)
     : id_(id)
     , buy_side_(buy_side)
     , symbol_(symbol)
@@ -23,6 +24,7 @@ Order::Order(const std::string & id,
     , stopPrice_(stopPrice)
     , ioc_(ioc)
     , aon_(aon)
+    , extern_order_id_(extern_order_id)
     , quantityFilled_(0)
     , quantityOnMarket_(0)
     , fillCost_(0)
@@ -35,6 +37,12 @@ std::string
 Order::order_id() const
 {
     return id_;
+}
+
+std::string 
+Order::extern_order_id() const
+{
+    return extern_order_id_;
 }
 
 bool 
@@ -170,7 +178,11 @@ Order::onFilled(
 
     std::stringstream msg;
     msg << fill_qty << " for " << fill_cost;
-    history_.emplace_back(Filled, msg.str());
+    if(quantityOnMarket_ > 0) {
+        history_.emplace_back(PartialFilled, msg.str());    
+    } else {
+        history_.emplace_back(Filled, msg.str());    
+    }
 }
 
 void 
@@ -336,6 +348,7 @@ std::ostream & operator << (std::ostream & out, const Order & order)
     }
 
    out << ']';
+   out << order.extern_order_id();
    
    return out;
 }

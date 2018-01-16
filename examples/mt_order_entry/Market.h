@@ -1,6 +1,7 @@
 // Copyright (c) 2017 Object Computing, Inc.
 // All rights reserved.
 // See the file license.txt for licensing information.
+#include <Python.h>
 #pragma once
 
 #include <book/depth_order_book.h>
@@ -42,9 +43,10 @@ public:
     static void help(std::ostream & out = std::cout);
 
     /// @brief Apply a user command that has been parsed into tokens.
-    bool apply(const std::vector<std::string> & tokens);
+    bool apply(const std::vector<std::string> & tokens, const std::string & extern_order_id);
 
 public:
+    PyObject *my_callback;
     /////////////////////////////////////
     // Implement OrderListener interface
 
@@ -110,7 +112,7 @@ public:
 private:
     ////////////////////////////////////
     // Command implementatiokns
-    bool doAdd(const std::string & side, const std::vector<std::string> & tokens, size_t pos);
+    bool doAdd(const std::string & side, const std::vector<std::string> & tokens, size_t pos, const std::string & extern_order_id);
     bool doCancel(const std::vector<std::string> & tokens, size_t position);
     bool doModify(const std::vector<std::string> & tokens, size_t position);
     bool doDisplay(const std::vector<std::string> & tokens, size_t position);

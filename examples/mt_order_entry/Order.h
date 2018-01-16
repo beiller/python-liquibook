@@ -48,11 +48,12 @@ public:
     Order(const std::string & id,
         bool buy_side,
         liquibook::book::Quantity quantity,
-        std::string symbol,
+        std::string & symbol,
         liquibook::book::Price price,
         liquibook::book::Price stopPrice,
         bool aon,
-        bool ioc);
+        bool ioc,
+        const std::string & extern_order_id);
 
     //////////////////////////
     // Implement the 
@@ -87,6 +88,8 @@ public:
     std::string symbol() const;
 
     std::string order_id() const;
+
+    std::string extern_order_id() const;
 
     uint32_t quantityFilled() const;
 
@@ -124,6 +127,7 @@ public:
 
 private:
     std::string id_;
+    std::string extern_order_id_;
     bool buy_side_;
     std::string symbol_;
     liquibook::book::Quantity quantity_;

@@ -14,7 +14,7 @@
 
 using namespace orderentry;
 
-int main(int argc, const char * argv[])
+/*int main(int argc, const char * argv[])
 {
     bool done = false;
     bool prompt = true;
@@ -169,4 +169,4 @@ int main(int argc, const char * argv[])
         }
     }
     return 0;
-}
+}*/

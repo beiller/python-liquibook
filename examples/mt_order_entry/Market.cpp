@@ -1,6 +1,7 @@
 // Copyright (c) 2017 Object Computing, Inc.
 // All rights reserved.
 // See the file license.txt for licensing information.
+#include <Python.h>
 #include "Market.h"
 #include "Util.h"
 
@@ -126,16 +127,17 @@ Market::help(std::ostream & out)
 }
 
 bool 
-Market::apply(const std::vector<std::string> & tokens)
+Market::apply(const std::vector<std::string> & tokens, const std::string & extern_order_id)
 {
     const std::string & command = tokens[0];
+
     if(command == "BUY" || command == "B")
     {
-        return doAdd("BUY", tokens, 1);
+        return doAdd("BUY", tokens, 1, extern_order_id);
     }
     if(command == "SELL" || command == "S")
     {
-        return doAdd("SELL", tokens, 1);
+        return doAdd("SELL", tokens, 1, extern_order_id);
     }
     else if (command == "CANCEL" || command == "C")
     {
@@ -156,8 +158,21 @@ Market::apply(const std::vector<std::string> & tokens)
 ////////
 // ADD
 bool 
-Market::doAdd(const  std::string & side, const std::vector<std::string> & tokens, size_t pos)
+Market::doAdd(
+    const std::string & side, 
+    const std::vector<std::string> & tokens, 
+    size_t pos,
+    const std::string & extern_order_id
+)
 {
+
+    OrderPtr myorder;
+    OrderBookPtr mybook;
+    if(findExistingOrder(extern_order_id, myorder, mybook))
+    {
+        //std::cout << "Duplicate order detected!!!!!!!!!!!!!\n";
+        return false;
+    }
     //////////////
     // Quantity
     liquibook::book::Quantity quantity;
@@ -197,22 +212,8 @@ Market::doAdd(const  std::string & side, const std::vector<std::string> & tokens
         }
         else
         {
-            std::string bookType;
-            while(bookType != "S" 
-              && bookType != "D" 
-              && bookType != "N")
-            {
-              bookType = promptForString(
-              "New Symbol " + symbol +  
-              ". \nAdd [S]imple book, or [D]epth book, or 'N' to cancel request.\n[SDN}");
-            }
-            if(bookType == "N")
-            {
-                out() << "Request ignored" << std::endl;
-                return false;
-            }
-            bool useDepth = bookType == "D";
-            addBook(symbol, useDepth);
+            out() << "Invalid book\n";
+            return false;
         }
     }
 
@@ -226,7 +227,8 @@ Market::doAdd(const  std::string & side, const std::vector<std::string> & tokens
     }
     else
     {
-        price = promptForPrice("Limit Price or MKT");
+        //price = promptForPrice("Limit Price or MKT");
+        price = 0; //MARKET
     }
     if(price > 10000000)
     {
@@ -247,8 +249,9 @@ Market::doAdd(const  std::string & side, const std::vector<std::string> & tokens
         std::string option = nextToken(tokens, pos);
         if(option.empty())
         {
-            prompted = true;
-            option = promptForString("AON, or IOC, or STOP, or END");
+            //prompted = true;
+            //option = promptForString("AON, or IOC, or STOP, or END");
+            option = "STOP";
         }
         if(option == ";" || option == "E" || option == "END")
         {
@@ -275,8 +278,10 @@ Market::doAdd(const  std::string & side, const std::vector<std::string> & tokens
             } 
             else
             {
-                stopPrice = promptForUint32("Stop Price");
-                prompted = true;
+                //stopPrice = promptForUint32("Stop Price");
+                //prompted = true;
+                out() << "Invalid stop price\n";
+                return false;
             }
             optionOk = stopPrice <= 10000000;
         }
@@ -293,7 +298,7 @@ Market::doAdd(const  std::string & side, const std::vector<std::string> & tokens
 
     std::string orderId = std::to_string(++orderIdSeed_);
 
-    OrderPtr order = std::make_shared<Order>(orderId, side == "BUY", quantity, symbol, price, stopPrice, aon, ioc);
+    OrderPtr order = std::make_shared<Order>(orderId, side == "BUY", quantity, symbol, price, stopPrice, aon, ioc, extern_order_id);
 
     const liquibook::book::OrderConditions AON(liquibook::book::oc_all_or_none);
     const liquibook::book::OrderConditions IOC(liquibook::book::oc_immediate_or_cancel);
@@ -311,9 +316,9 @@ Market::doAdd(const  std::string & side, const std::vector<std::string> & tokens
     }
 
     order->onSubmitted();
-    out() << "ADDING order:  " << *order << std::endl;
+    //out() << "ADDING order:  " << *order << std::endl;
 
-    orders_[orderId] = order;
+    orders_[extern_order_id] = order;
     book->add(order, conditions);
     return true;
 }
@@ -329,7 +334,7 @@ Market::doCancel(const std::vector<std::string> & tokens, size_t position)
     {
         return false;
     }
-    out() << "Requesting Cancel: " << *order << std::endl;
+    //out() << "Requesting Cancel: " << *order << std::endl;
     book->cancel(order);
     return true;
 }
@@ -362,8 +367,10 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
         std::string option = nextToken(tokens, position);
         if(option.empty())
         {
-            prompted = true;
-            option = promptForString("PRICE, or QUANTITY, or END");
+            //prompted = true;
+            //option = promptForString("PRICE, or QUANTITY, or END");
+            out() << "Invalid modify command\n";
+            return false;
         }
         if(option == ";" || option == "E" || option == "END")
         {
@@ -376,7 +383,9 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
             std::string priceStr = nextToken(tokens, position);
             if(priceStr.empty())
             {
-                newPrice = promptForUint32("New Price");
+                //newPrice = promptForUint32("New Price");
+                out() << "Invalid modify price\n";
+                return false;
             }
             else
             {
@@ -399,7 +408,9 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
             std::string qtyStr = nextToken(tokens, position);
             if(qtyStr.empty())
             {
-                qty = promptForInt32("Change in quantity");
+                //qty = promptForInt32("Change in quantity");
+                out() << "Invalid modify quantity\n";
+                return false;
             }
             else
             {
@@ -428,16 +439,16 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
     }
 
     book->replace(order, quantityChange, price);
-    out() << "Requested Modify" ;
+    //out() << "Requested Modify" ;
     if(quantityChange != liquibook::book::SIZE_UNCHANGED)
     {
-        out() << " QUANTITY  += " << quantityChange;
+        //out() << " QUANTITY  += " << quantityChange;
     }
     if(price != liquibook::book::PRICE_UNCHANGED)
     {
-        out() << " PRICE " << price;
+        //out() << " PRICE " << price;
     }
-    out() << std::endl;
+    //out() << std::endl;
     return true;
 }
 
@@ -591,8 +602,9 @@ bool Market::findExistingOrder(const std::vector<std::string> & tokens, size_t &
     trim(orderId);
     if(orderId.empty())
     {
-        orderId = promptForString("Order Id#");
-        trim(orderId);
+        //orderId = promptForString("Order Id#");
+        //trim(orderId);
+        return false;
     }
     // discard leading # if any
     if(orderId[0] == '#')
@@ -605,18 +617,6 @@ bool Market::findExistingOrder(const std::vector<std::string> & tokens, size_t &
             return false;
         }
     }
-
-    if(orderId[0] == '-') // relative addressing
-    {
-        int32_t orderOffset = toInt32(orderId);
-        if(orderOffset == INVALID_INT32)
-        {
-            out() << "--Expecting orderID or offset" << std::endl;
-            return false;
-        }
-        uint32_t orderNumber = orderIdSeed_  + 1 + orderOffset;
-        orderId = std::to_string(orderNumber);
-    }
     return findExistingOrder(orderId, order, book);
 }
 
@@ -625,7 +625,7 @@ bool Market::findExistingOrder(const std::string & orderId, OrderPtr & order, Or
     auto orderPosition = orders_.find(orderId);
     if(orderPosition == orders_.end())
     {
-        out() << "--Can't find OrderID #" << orderId << std::endl;
+        //out() << "--Can't find OrderID #" << orderId << std::endl;
         return false;
     }
 
@@ -634,7 +634,7 @@ bool Market::findExistingOrder(const std::string & orderId, OrderPtr & order, Or
     book = findBook(symbol);
     if(!book)
     {
-        out() << "--No order book for symbol" << symbol << std::endl;
+        //out() << "--No order book for symbol" << symbol << std::endl;
         return false;
     }
     return true;
@@ -642,20 +642,34 @@ bool Market::findExistingOrder(const std::string & orderId, OrderPtr & order, Or
 
 /////////////////////////////////////
 // Implement OrderListener interface
+void run_callback(PyObject *my_callback, int code, std::string data) {
+    PyObject *arglist;
+    PyObject *result;
+    
+    /* Time to call the callback */
+    arglist = Py_BuildValue("(is)", code, data.c_str());
+    result = PyObject_CallObject(my_callback, arglist);
+
+    Py_DECREF(arglist);
+    Py_DECREF(result);
+}
 
 void 
 Market::on_accept(const OrderPtr& order)
 {
     order->onAccepted();
-    out() << "\tAccepted: " <<*order<< std::endl;
+    std::stringstream ss;
+    ss << "\tAccepted: " <<*order<< std::endl;
+    run_callback(my_callback, 1, ss.str());
 }
 
 void 
 Market::on_reject(const OrderPtr& order, const char* reason)
 {
     order->onRejected(reason);
-    out() << "\tRejected: " <<*order<< ' ' << reason << std::endl;
-
+    std::stringstream ss;
+    ss << "\tRejected: " <<*order<< ' ' << reason << std::endl;
+    run_callback(my_callback, 2, ss.str());
 }
 
 void 
@@ -666,23 +680,42 @@ Market::on_fill(const OrderPtr& order,
 {
     order->onFilled(fill_qty, fill_cost);
     matched_order->onFilled(fill_qty, fill_cost);
-    out() << (order->is_buy() ? "\tBought: " : "\tSold: ") 
+    std::stringstream ss;
+
+    ss << (order->is_buy() ? "\tBought: " : "\tSold: ") 
         << fill_qty << " Shares for " << fill_cost << ' ' <<*order<< std::endl;
-    out() << (matched_order->is_buy() ? "\tBought: " : "\tSold: ") 
+    ss << (matched_order->is_buy() ? "\tBought: " : "\tSold: ") 
         << fill_qty << " Shares for " << fill_cost << ' ' << *matched_order << std::endl;
+
+    run_callback(my_callback, 3, ss.str());
+    if(order->currentState().state_ == Order::Filled) {
+        orders_.erase(order->extern_order_id());   
+    }
+    if(matched_order->currentState().state_ == Order::Filled) {
+        orders_.erase(matched_order->extern_order_id());   
+    }
+    //orders_.erase(order->extern_order_id());
+    //orders_.erase(matched_order->extern_order_id());
 }
 
 void 
 Market::on_cancel(const OrderPtr& order)
 {
     order->onCancelled();
-    out() << "\tCanceled: " << *order<< std::endl;
+    std::stringstream ss;
+    ss << "\tCanceled: " << *order<< std::endl;
+    run_callback(my_callback, 4, ss.str());
+    if(order->currentState().state_ == Order::Cancelled) {
+        orders_.erase(order->extern_order_id());   
+    }
 }
 
 void Market::on_cancel_reject(const OrderPtr& order, const char* reason)
 {
     order->onCancelRejected(reason);
-    out() << "\tCancel Reject: " <<*order<< ' ' << reason << std::endl;
+    std::stringstream ss;
+    ss << "\tCancel Reject: " <<*order<< ' ' << reason << std::endl;
+    run_callback(my_callback, 5, ss.str());
 }
 
 void Market::on_replace(const OrderPtr& order, 
@@ -690,23 +723,28 @@ void Market::on_replace(const OrderPtr& order,
     liquibook::book::Price new_price)
 {
     order->onReplaced(size_delta, new_price);
-    out() << "\tModify " ;
+    std::stringstream ss;
+    //ss << *order;
+    ss << "\tModify " ;
     if(size_delta != liquibook::book::SIZE_UNCHANGED)
     {
-        out() << " QUANTITY  += " << size_delta;
+        ss << " QUANTITY  += " << size_delta;
     }
     if(new_price != liquibook::book::PRICE_UNCHANGED)
     {
-        out() << " PRICE " << new_price;
+        ss << " PRICE " << new_price;
     }
-    out() <<*order<< std::endl;
+    ss <<*order<< std::endl;
+    run_callback(my_callback, 6, ss.str());
 }
 
 void 
 Market::on_replace_reject(const OrderPtr& order, const char* reason)
 {
     order->onReplaceRejected(reason);
-    out() << "\tReplace Reject: " <<*order<< ' ' << reason << std::endl;
+    std::stringstream ss;
+    ss << "\tReplace Reject: " <<*order<< ' ' << reason << std::endl;
+    run_callback(my_callback, 7, ss.str());
 }
 
 ////////////////////////////////////
@@ -717,7 +755,9 @@ Market::on_trade(const OrderBook* book,
     liquibook::book::Quantity qty, 
     liquibook::book::Cost cost)
 {
-    out() << "\tTrade: " << qty <<  ' ' << book->symbol() << " Cost "  << cost  << std::endl;
+    std::stringstream ss;
+    ss << "\tTrade: " << qty <<  ' ' << book->symbol() << " Cost "  << cost  << std::endl;
+    run_callback(my_callback, 7, ss.str());
 }
 
 /////////////////////////////////////////
@@ -726,7 +766,7 @@ Market::on_trade(const OrderBook* book,
 void 
 Market::on_order_book_change(const OrderBook* book)
 {
-    out() << "\tBook Change: " << ' ' << book->symbol() << std::endl;
+    //out() << "\tBook Change: " << ' ' << book->symbol() << std::endl;
 }
 
 
@@ -736,12 +776,12 @@ Market::on_order_book_change(const OrderBook* book)
 void 
 Market::on_bbo_change(const DepthOrderBook * book, const BookDepth * depth)
 {
-    out() << "\tBBO Change: " << ' ' << book->symbol() 
+    /*out() << "\tBBO Change: " << ' ' << book->symbol() 
         << (depth->changed() ? " Changed" : " Unchanged")
         << " Change Id: " << depth->last_change()
         << " Published: " << depth->last_published_change()
         << std::endl;
-
+    */
 }
 
 /////////////////////////////////////////
@@ -749,12 +789,12 @@ Market::on_bbo_change(const DepthOrderBook * book, const BookDepth * depth)
 void 
 Market::on_depth_change(const DepthOrderBook * book, const BookDepth * depth)
 {
-    out() << "\tDepth Change: " << ' ' << book->symbol();
+    /*out() << "\tDepth Change: " << ' ' << book->symbol();
     out() << (depth->changed() ? " Changed" : " Unchanged")
         << " Change Id: " << depth->last_change()
         << " Published: " << depth->last_published_change();
     publishDepth(out(), *depth);
-    out() << std::endl;
+    out() << std::endl;*/
 }
 
 }  // namespace orderentry
