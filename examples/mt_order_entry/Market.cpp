@@ -659,7 +659,7 @@ Market::on_accept(const OrderPtr& order)
 {
     order->onAccepted();
     std::stringstream ss;
-    ss << "\tAccepted: " <<*order<< std::endl;
+    ss << *order;
     run_callback(my_callback, 1, ss.str());
 }
 
@@ -668,7 +668,7 @@ Market::on_reject(const OrderPtr& order, const char* reason)
 {
     order->onRejected(reason);
     std::stringstream ss;
-    ss << "\tRejected: " <<*order<< ' ' << reason << std::endl;
+    ss << *order;
     run_callback(my_callback, 2, ss.str());
 }
 
@@ -682,11 +682,11 @@ Market::on_fill(const OrderPtr& order,
     matched_order->onFilled(fill_qty, fill_cost);
     std::stringstream ss;
 
-    ss << (order->is_buy() ? "\tBought: " : "\tSold: ") 
+    /*ss << (order->is_buy() ? "\tBought: " : "\tSold: ") 
         << fill_qty << " Shares for " << fill_cost << ' ' <<*order<< std::endl;
     ss << (matched_order->is_buy() ? "\tBought: " : "\tSold: ") 
-        << fill_qty << " Shares for " << fill_cost << ' ' << *matched_order << std::endl;
-
+        << fill_qty << " Shares for " << fill_cost << ' ' << *matched_order << std::endl;*/
+    ss << "[" << *order << ", " << *matched_order << "]";
     run_callback(my_callback, 3, ss.str());
     if(order->currentState().state_ == Order::Filled) {
         orders_.erase(order->extern_order_id());   
@@ -703,7 +703,7 @@ Market::on_cancel(const OrderPtr& order)
 {
     order->onCancelled();
     std::stringstream ss;
-    ss << "\tCanceled: " << *order<< std::endl;
+    ss << *order;
     run_callback(my_callback, 4, ss.str());
     if(order->currentState().state_ == Order::Cancelled) {
         orders_.erase(order->extern_order_id());   
@@ -714,7 +714,7 @@ void Market::on_cancel_reject(const OrderPtr& order, const char* reason)
 {
     order->onCancelRejected(reason);
     std::stringstream ss;
-    ss << "\tCancel Reject: " <<*order<< ' ' << reason << std::endl;
+    ss << *order;
     run_callback(my_callback, 5, ss.str());
 }
 
@@ -725,7 +725,7 @@ void Market::on_replace(const OrderPtr& order,
     order->onReplaced(size_delta, new_price);
     std::stringstream ss;
     //ss << *order;
-    ss << "\tModify " ;
+    /*ss << "\tModify " ;
     if(size_delta != liquibook::book::SIZE_UNCHANGED)
     {
         ss << " QUANTITY  += " << size_delta;
@@ -733,8 +733,8 @@ void Market::on_replace(const OrderPtr& order,
     if(new_price != liquibook::book::PRICE_UNCHANGED)
     {
         ss << " PRICE " << new_price;
-    }
-    ss <<*order<< std::endl;
+    }*/
+    ss << *order;
     run_callback(my_callback, 6, ss.str());
 }
 
@@ -743,7 +743,8 @@ Market::on_replace_reject(const OrderPtr& order, const char* reason)
 {
     order->onReplaceRejected(reason);
     std::stringstream ss;
-    ss << "\tReplace Reject: " <<*order<< ' ' << reason << std::endl;
+    //ss << "\tReplace Reject: " <<*order<< ' ' << reason << std::endl;
+    ss << *order;
     run_callback(my_callback, 7, ss.str());
 }
 
@@ -756,8 +757,8 @@ Market::on_trade(const OrderBook* book,
     liquibook::book::Cost cost)
 {
     std::stringstream ss;
-    ss << "\tTrade: " << qty <<  ' ' << book->symbol() << " Cost "  << cost  << std::endl;
-    run_callback(my_callback, 7, ss.str());
+    ss << "{\"trade\": " << qty <<  ", \"symbol\": \"" << book->symbol() << "\", \"cost\": "  << cost << "}";
+    run_callback(my_callback, 8, ss.str());
 }
 
 /////////////////////////////////////////

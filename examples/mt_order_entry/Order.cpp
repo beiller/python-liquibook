@@ -248,107 +248,110 @@ Order::onReplaceRejected(const char * reason)
 
 std::ostream & operator << (std::ostream & out, const Order::StateChange & event)
 {
-    out << "{";
+    //out << "{";
     switch(event.state_)
     {
     case Order::Submitted:
-        out << "Submitted ";
+        out << "Submitted";
         break;
     case Order::Rejected: 
-        out << "Rejected "; 
+        out << "Rejected"; 
         break;
     case Order::Accepted:
-        out << "Accepted ";
+        out << "Accepted";
         break;
     case Order::ModifyRequested:
-        out << "ModifyRequested ";
+        out << "ModifyRequested";
         break;
     case Order::ModifyRejected:
-        out << "ModifyRejected ";
+        out << "ModifyRejected";
         break;
     case Order::Modified:
-        out << "Modified ";
+        out << "Modified";
         break;
     case Order::PartialFilled:
-        out << "PartialFilled ";
+        out << "PartialFilled";
         break;
     case Order::Filled: 
-        out << "Filled "; 
+        out << "Filled"; 
         break;
     case Order::CancelRequested:
-        out << "CancelRequested ";
+        out << "CancelRequested";
         break;
     case Order::CancelRejected:
-        out << "CancelRejected ";
+        out << "CancelRejected";
         break;
     case Order::Cancelled: 
-        out << "Cancelled "; 
+        out << "Cancelled"; 
         break;
     case Order::Unknown:
-        out << "Unknown ";
+        out << "Unknown";
         break;
     }
-    out << event.description_;
-    out << "}";
+    //out << event.description_;
+    //out << "}";
     return out;
 }
 
 std::ostream & operator << (std::ostream & out, const Order & order)
 {
-    out << "[#" << order.order_id(); 
-    out << ' ' << (order.is_buy() ? "BUY" : "SELL");
-    out << ' ' << order.order_qty();
-    out << ' ' << order.symbol();
+    out << "{\"order_id\": \"" << order.extern_order_id() << "\""; 
+    out << ", \"side\": \"" << (order.is_buy() ? "BUY" : "SELL") << "\"";
+    out << ", \"quantity\": " << order.order_qty();
+    out << ", \"symbol\": \"" << order.symbol() << "\"";
     if(order.price() == 0)
     {
-        out << " MKT";
+        out << ", \"price\": \"MKT\"";
     }
     else
     {
-        out << " $" << order.price();
+        out << ", \"price\": "<< order.price();
     }
 
     if(order.stop_price() != 0)
     {
-       out << " STOP " << order.stop_price();
+        out << ", \"stop\": "<< order.stop_price();
     }
 
-    out  << (order.all_or_none() ? " AON" : "")
-        << (order.immediate_or_cancel() ? " IOC" : "");
+    if(order.all_or_none())
+    {
+        out << ", \"aon\": true";
+    } else {
+        out << ", \"aon\": false";
+    }
+
+    if(order.immediate_or_cancel())
+    {
+        out << ", \"ioc\": true";
+    } else {
+        out << ", \"ioc\": false";
+    }
 
     auto onMarket = order.quantityOnMarket();
     if(onMarket != 0)
     {
-        out << " Open: " << onMarket;
+        //out << " Open: " << onMarket;
+        out << ", \"open\": "<< onMarket;
     }
 
     auto filled = order.quantityFilled();
     if(filled != 0)
     {
-        out << " Filled: " << filled;
+        //out << " Filled: " << filled;
+        out << ", \"filled\": "<< filled;
     }
 
     auto cost = order.fillCost();
     if(cost != 0)
     {
-        out << " Cost: " << cost;
+        //out << " Cost: " << cost;
+        out << ", \"cost\": "<< cost;
     }
 
-    if(order.isVerbose())
-    {
-        const Order::History & history = order.history();
-        for(auto event = history.begin(); event != history.end(); ++event)
-        {
-            out << "\n\t" << *event;
-        } 
-    }
-    else
-    {
-        out << " Last Event:" << order.currentState();
-    }
+    out << ", \"status\": \""<< order.currentState() << "\"";
+    //out << " Last Event:" << order.currentState();
 
-   out << ']';
-   out << order.extern_order_id();
+    out << '}';
    
    return out;
 }

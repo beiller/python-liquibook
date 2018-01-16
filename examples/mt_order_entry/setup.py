@@ -2,9 +2,10 @@ import liquibook
 import random
 import time
 import uuid
+import json
 
 def my_fucking_callback(code, data):
-	print('callback_code', code, data.strip())
+	print(code, json.loads(data.strip()))
 
 liquibook.set_callback(my_fucking_callback)
 
