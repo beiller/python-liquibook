@@ -9,12 +9,6 @@ def my_fucking_callback(code, data):
 
 liquibook.set_callback(my_fucking_callback)
 
-script = """BUY 100 !IBM 49 ;
-SELL 10 IBM 40 ;
-SELL 10 IBM 40 ;
-SELL 80 IBM 40 ;
-"""
-
 def generate_order_id():
 	return str(uuid.uuid4())
 
@@ -37,11 +31,24 @@ def random_test():
 		if time.time() - start_time > 30:
 			# liquibook.foo('', 'D + ALL')
 			break
+		# time.sleep(0.3)
 
 def controlled_test():
+	script = """BUY 100 !IBM 49 ;
+SELL 10 IBM 40 ;
+SELL 10 IBM 40 ;
+SELL 80 IBM 40 ;
+"""
 	for line in script.split('\n'):
 		order_id = generate_order_id()
 		liquibook.foo(order_id, line.strip())
 
-while True:
-	controlled_test()
+
+def modify_test():
+	my_id = generate_order_id()
+	liquibook.foo(my_id, 'BUY 100 !IBM 49 ;')
+	liquibook.foo(my_id, 'MODIFY #{} PRICE 101 QUANTITY -1 ;'.format(my_id))
+	liquibook.foo(my_id, 'CANCEL #{} ;'.format(my_id))
+		
+
+random_test()

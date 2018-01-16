@@ -649,9 +649,11 @@ void run_callback(PyObject *my_callback, int code, std::string data) {
     /* Time to call the callback */
     arglist = Py_BuildValue("(is)", code, data.c_str());
     result = PyObject_CallObject(my_callback, arglist);
-
-    Py_DECREF(arglist);
-    Py_DECREF(result);
+    Py_XDECREF(arglist);
+    if(result == NULL) {
+        return;
+    }
+    Py_XDECREF(result);
 }
 
 void 
