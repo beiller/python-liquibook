@@ -16,7 +16,7 @@ def generate_random_command():
 	return "{} {} !IBM {} ;".format(
 		['BUY', 'SELL'][random.randint(0,1)],
 		random.randint(5,1000),
-		random.randint(40,70)
+		[random.randint(40,70), 'MKT'][random.randint(0,1)]
 	)
 	#if n == 1:
 	#	return "CANCEL #{} ;".format()
@@ -28,10 +28,6 @@ def random_test():
 		myid = generate_order_id()
 		mycommand = generate_random_command()
 		liquibook.foo(myid, mycommand)
-		if time.time() - start_time > 30:
-			# liquibook.foo('', 'D + ALL')
-			break
-		# time.sleep(0.3)
 
 def controlled_test():
 	script = """BUY 100 !IBM 49 ;
