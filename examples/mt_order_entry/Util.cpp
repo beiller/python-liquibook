@@ -18,24 +18,24 @@ std::string nextToken(const std::vector<std::string> & tokens, size_t & pos)
     return "";
 }
 
-uint32_t toUint32(const std::string & input)
+liquibook::book::Quantity toNative(const std::string & input)
 {
     char * end;
-    uint32_t value = strtoul(input.c_str(), &end, 10);
+    liquibook::book::Quantity value = strtod(input.c_str(), &end);
     if(*end != '\0')
     {
-        value = INVALID_UINT32;
+        value = INVALID_UNSIGNED;
     }
     return value;
 }
 
-uint32_t toInt32(const std::string & input)
+liquibook::book::QuantityDelta toNativeSigned(const std::string & input)
 {
     char * end;
-    uint32_t value = strtol(input.c_str(), &end, 10);
+    liquibook::book::QuantityDelta value = strtod(input.c_str(), &end);
     if(*end != '\0')
     {
-        value = INVALID_INT32;
+        value = INVALID_SIGNED;
     }
     return value;
 }
@@ -48,57 +48,7 @@ liquibook::book::Price stringToPrice(const std::string & str)
         return 0;
     } else
     {
-        return toUint32(str);
-    }
-}
-
-std::string promptForString(const std::string & prompt, bool uppercase)
-{
-    std::cout << "\n" << prompt << ": " << std::flush;
-    std::string input;
-    std::getline(std::cin, input);
-    if(uppercase)
-    {
-      std::transform(input.begin(), input.end(), input.begin(), toupper);
-    }
-    return input;
-}
-
-liquibook::book::Price promptForPrice(const std::string & prompt)
-{
-    std::string str = promptForString(prompt);
-    return stringToPrice(str);
-}
-
-uint32_t promptForUint32(const std::string & prompt)
-{
-    std::cout << "\n" << prompt << ": " << std::flush;
-    std::string input;
-    std::getline(std::cin, input);
-    return toUint32(input);
-}
-
-int32_t promptForInt32(const std::string & prompt)
-{
-    std::cout << "\n" << prompt << ": " << std::flush;
-    std::string input;
-    std::getline(std::cin, input);
-    return toInt32(input);
-}
-
-bool promptForYesNo(const std::string & prompt)
-{
-    while(true)
-    {
-        std::string input = promptForString(prompt);
-        if(input == "Y" || input == "YES" || input == "T" || input == "TRUE")
-        {
-            return true;
-        }
-        if(input == "N" || input == "NO" || input == "F" || input == "FALSE")
-        {
-            return false;
-        }
+        return toNative(str);
     }
 }
 

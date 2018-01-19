@@ -30,10 +30,8 @@ def random_test():
 		liquibook.foo(myid, mycommand)
 
 def controlled_test():
-	script = """BUY 100 !IBM 49 ;
-SELL 10 IBM 40 ;
-SELL 10 IBM 40 ;
-SELL 80 IBM 40 ;
+	script = """BUY 100.00000001 !XMR/BTC 0.00010001 ;
+SELL 100.00000001 !XMR/BTC 0.00010001 ;
 """
 	for line in script.split('\n'):
 		order_id = generate_order_id()

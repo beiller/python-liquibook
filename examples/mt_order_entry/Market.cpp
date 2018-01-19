@@ -72,7 +72,7 @@ namespace {
 namespace orderentry
 {
 
-uint32_t Market::orderIdSeed_ = 0;
+liquibook::book::OrderId Market::orderIdSeed_ = 0;
 
 Market::Market(std::ostream * out)
 : logFile_(out)
@@ -179,14 +179,14 @@ Market::doAdd(
     std::string qtyStr = nextToken(tokens, pos);
     if(!qtyStr.empty())
     {
-        quantity = toUint32(qtyStr);
+        quantity = toNative(qtyStr);
     }
     else
     {
-        quantity = promptForUint32("Quantity");
+        return false;
     }
     // sanity check
-    if(quantity == 0 || quantity > 1000000000)
+    if(quantity == 0)
     {
         out() << "--Expecting quantity" << std::endl;
         return false;
@@ -197,7 +197,7 @@ Market::doAdd(
     std::string symbol = nextToken(tokens, pos);
     if(symbol.empty())
     {
-        symbol = promptForString("Symbol");
+        return false;
     }
     if(!symbolIsDefined(symbol))
     {
@@ -219,7 +219,7 @@ Market::doAdd(
 
     ///////////////
     // PRICE
-    uint32_t price = 0;
+    liquibook::book::Price price = 0;
     std::string priceStr = nextToken(tokens, pos);
     if(!priceStr.empty())
     {
@@ -227,7 +227,6 @@ Market::doAdd(
     }
     else
     {
-        //price = promptForPrice("Limit Price or MKT");
         price = 0; //MARKET
     }
     if(price > 10000000)
@@ -249,8 +248,6 @@ Market::doAdd(
         std::string option = nextToken(tokens, pos);
         if(option.empty())
         {
-            //prompted = true;
-            //option = promptForString("AON, or IOC, or STOP, or END");
             option = "STOP";
         }
         if(option == ";" || option == "E" || option == "END")
@@ -278,8 +275,6 @@ Market::doAdd(
             } 
             else
             {
-                //stopPrice = promptForUint32("Stop Price");
-                //prompted = true;
                 out() << "Invalid stop price\n";
                 return false;
             }
@@ -356,7 +351,7 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
     //////////////////////////
     // OPTIONS: PRICE (price) ; QUANTITY (delta)
 
-    int32_t quantityChange = liquibook::book::SIZE_UNCHANGED;
+    liquibook::book::QuantityDelta quantityChange = liquibook::book::SIZE_UNCHANGED;
     liquibook::book::Price price = liquibook::book::PRICE_UNCHANGED;
 
     bool go = false;
@@ -367,8 +362,6 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
         std::string option = nextToken(tokens, position);
         if(option.empty())
         {
-            //prompted = true;
-            //option = promptForString("PRICE, or QUANTITY, or END");
             out() << "Invalid modify command\n";
             return false;
         }
@@ -379,20 +372,19 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
         }
         else if(option == "P" || option == "PRICE")
         {
-            uint32_t newPrice = INVALID_UINT32;
+            liquibook::book::Price newPrice = INVALID_UNSIGNED;
             std::string priceStr = nextToken(tokens, position);
             if(priceStr.empty())
             {
-                //newPrice = promptForUint32("New Price");
                 out() << "Invalid modify price\n";
                 return false;
             }
             else
             {
-                newPrice = toUint32(priceStr);
+                newPrice = toNative(priceStr);
             }
 
-            if(newPrice > 0 && newPrice != INVALID_UINT32)
+            if(newPrice > 0 && newPrice != INVALID_UNSIGNED)
             {
                 price = newPrice;
                 optionOk = true;
@@ -404,19 +396,18 @@ Market::doModify(const std::vector<std::string> & tokens, size_t position)
         }
         else if(option == "Q" || option == "QUANTITY")
         {
-            int32_t qty = INVALID_INT32;
+            liquibook::book::QuantityDelta qty = INVALID_SIGNED;
             std::string qtyStr = nextToken(tokens, position);
             if(qtyStr.empty())
             {
-                //qty = promptForInt32("Change in quantity");
                 out() << "Invalid modify quantity\n";
                 return false;
             }
             else
             {
-                qty = toInt32(qtyStr);
+                qty = toNativeSigned(qtyStr);
             }
-            if(qty != INVALID_INT32)
+            if(qty != INVALID_SIGNED)
             {
                 quantityChange = qty;
                 optionOk = true;
@@ -463,7 +454,7 @@ Market::doDisplay(const std::vector<std::string> & tokens, size_t pos)
     std::string parameter = nextToken(tokens, pos);
     if(parameter.empty())
     {
-        parameter = promptForString("+ or #OrderId or -orderOffset or symbol or \"ALL\"");
+        return false;
     }
     else
     {
@@ -482,7 +473,7 @@ Market::doDisplay(const std::vector<std::string> & tokens, size_t pos)
             parameter = nextToken(tokens, pos);
             if(parameter.empty())
             {
-                parameter = promptForString("#OrderId or -orderOffset or symbol or \"ALL\"");
+                return false;
             }
             else
             {
@@ -602,8 +593,6 @@ bool Market::findExistingOrder(const std::vector<std::string> & tokens, size_t &
     trim(orderId);
     if(orderId.empty())
     {
-        //orderId = promptForString("Order Id#");
-        //trim(orderId);
         return false;
     }
     // discard leading # if any
@@ -688,7 +677,11 @@ Market::on_fill(const OrderPtr& order,
         << fill_qty << " Shares for " << fill_cost << ' ' <<*order<< std::endl;
     ss << (matched_order->is_buy() ? "\tBought: " : "\tSold: ") 
         << fill_qty << " Shares for " << fill_cost << ' ' << *matched_order << std::endl;*/
-    ss << "[" << *order << ", " << *matched_order << "]";
+    ss.precision(8);
+    ss << std::fixed;
+    ss << "{\"details\": {\"fillQty\": \"" << fill_qty;
+    ss << "\", \"fillCost\": \"" << fill_cost;
+    ss << "\"}, \"orders\": [" << *order << ", " << *matched_order << "]}";
     run_callback(my_callback, 3, ss.str());
     if(order->currentState().state_ == Order::Filled) {
         orders_.erase(order->extern_order_id());   
@@ -721,7 +714,7 @@ void Market::on_cancel_reject(const OrderPtr& order, const char* reason)
 }
 
 void Market::on_replace(const OrderPtr& order, 
-    const int32_t& size_delta, 
+    const liquibook::book::QuantityDelta& size_delta, 
     liquibook::book::Price new_price)
 {
     order->onReplaced(size_delta, new_price);
@@ -759,7 +752,9 @@ Market::on_trade(const OrderBook* book,
     liquibook::book::Cost cost)
 {
     std::stringstream ss;
-    ss << "{\"trade\": " << qty <<  ", \"symbol\": \"" << book->symbol() << "\", \"cost\": "  << cost << "}";
+    ss.precision(8);
+    ss << std::fixed;
+    ss << "{\"trade\": \"" << qty <<  "\", \"symbol\": \"" << book->symbol() << "\", \"cost\": \""  << cost << "\"}";
     run_callback(my_callback, 8, ss.str());
 }
 

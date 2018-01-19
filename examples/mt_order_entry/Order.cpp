@@ -3,6 +3,8 @@
 // See the file license.txt for licensing information.
 #include "Order.h"
 #include <sstream>
+#include <iomanip>
+#include <iostream>
 
 namespace orderentry
 {
@@ -94,19 +96,19 @@ Order::stop_price() const
     return stopPrice_;
 }
 
-uint32_t 
+liquibook::book::Quantity 
 Order::quantityOnMarket() const
 {
     return quantityOnMarket_;
 }
 
-uint32_t 
+liquibook::book::Quantity 
 Order::quantityFilled() const
 {
     return quantityFilled_;
 }
 
-uint32_t 
+liquibook::book::Price
 Order::fillCost() const
 {
     return fillCost_;
@@ -206,7 +208,7 @@ Order::onCancelRejected(const char * reason)
 
 void 
 Order::onReplaceRequested(
-    const int32_t& size_delta, 
+    const liquibook::book::QuantityDelta& size_delta, 
     liquibook::book::Price new_price)
 {
     std::stringstream msg;
@@ -222,7 +224,7 @@ Order::onReplaceRequested(
 }
 
 void 
-Order::onReplaced(const int32_t& size_delta, 
+Order::onReplaced(const liquibook::book::QuantityDelta& size_delta, 
     liquibook::book::Price new_price)
 {
     std::stringstream msg;
@@ -295,9 +297,11 @@ std::ostream & operator << (std::ostream & out, const Order::StateChange & event
 
 std::ostream & operator << (std::ostream & out, const Order & order)
 {
+    out.precision(8);
+    out << std::fixed;
     out << "{\"order_id\": \"" << order.extern_order_id() << "\""; 
     out << ", \"side\": \"" << (order.is_buy() ? "BUY" : "SELL") << "\"";
-    out << ", \"quantity\": " << order.order_qty();
+    out << ", \"quantity\": \"" << order.order_qty() << "\"";
     out << ", \"symbol\": \"" << order.symbol() << "\"";
     if(order.price() == 0)
     {
@@ -305,12 +309,12 @@ std::ostream & operator << (std::ostream & out, const Order & order)
     }
     else
     {
-        out << ", \"price\": "<< order.price();
+        out << ", \"price\": \""<< order.price() << "\"";
     }
 
     if(order.stop_price() != 0)
     {
-        out << ", \"stop\": "<< order.stop_price();
+        out << ", \"stop\": \""<< order.stop_price() << "\"";
     }
 
     if(order.all_or_none())
@@ -331,21 +335,21 @@ std::ostream & operator << (std::ostream & out, const Order & order)
     if(onMarket != 0)
     {
         //out << " Open: " << onMarket;
-        out << ", \"open\": "<< onMarket;
+        out << ", \"open\": \""<< onMarket << "\"";
     }
 
     auto filled = order.quantityFilled();
     if(filled != 0)
     {
         //out << " Filled: " << filled;
-        out << ", \"filled\": "<< filled;
+        out << ", \"filled\": \""<< filled << "\"";
     }
 
     auto cost = order.fillCost();
     if(cost != 0)
     {
         //out << " Cost: " << cost;
-        out << ", \"cost\": "<< cost;
+        out << ", \"cost\": \""<< cost << "\"";
     }
 
     out << ", \"status\": \""<< order.currentState() << "\"";

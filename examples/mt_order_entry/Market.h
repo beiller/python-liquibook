@@ -77,7 +77,7 @@ public:
     /// @param size_delta the change to order quantity
     /// @param new_price the updated order price
     virtual void on_replace(const OrderPtr& order, 
-        const int32_t& size_delta, 
+        const liquibook::book::QuantityDelta& size_delta, 
         liquibook::book::Price new_price);
 
     /// @brief callback for an order replace rejection
@@ -130,7 +130,7 @@ private:
         return *logFile_;
     }
 private:
-    static uint32_t orderIdSeed_;
+    static liquibook::book::OrderId orderIdSeed_;
 
     std::ostream * logFile_;
 

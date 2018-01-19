@@ -91,11 +91,11 @@ public:
 
     std::string extern_order_id() const;
 
-    uint32_t quantityFilled() const;
+    liquibook::book::Quantity quantityFilled() const;
 
-    uint32_t quantityOnMarket() const;
+    liquibook::book::Quantity quantityOnMarket() const;
 
-    uint32_t fillCost() const;
+    liquibook::book::Price fillCost() const;
 
     Order & verbose(bool verbose = true);
     bool isVerbose()const;
@@ -117,10 +117,10 @@ public:
     void onCancelRejected(const char * reason);
 
     void onReplaceRequested(
-        const int32_t& size_delta, 
+        const liquibook::book::QuantityDelta& size_delta, 
         liquibook::book::Price new_price);
 
-    void onReplaced(const int32_t& size_delta, 
+    void onReplaced(const liquibook::book::QuantityDelta& size_delta, 
         liquibook::book::Price new_price);
 
     void onReplaceRejected(const char * reaseon);
@@ -138,8 +138,8 @@ private:
     bool ioc_;
 
     liquibook::book::Quantity quantityFilled_;
-    int32_t quantityOnMarket_;
-    uint32_t fillCost_;
+    liquibook::book::QuantityDelta quantityOnMarket_;
+    liquibook::book::Price fillCost_;
     
     std::vector<StateChange> history_;
     bool verbose_;

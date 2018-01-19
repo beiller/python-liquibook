@@ -10,8 +10,8 @@
 
 namespace orderentry
 {
-static const uint32_t INVALID_UINT32 = UINT32_MAX;
-static const int32_t INVALID_INT32 = INT32_MAX;
+static const liquibook::book::Price INVALID_UNSIGNED = UINT64_MAX;
+static const liquibook::book::Price INVALID_SIGNED   = INT64_MAX;
 
 /// @brief Parse a string into tokens breaking on delimiters.
 /// @param input The string to parse.
@@ -40,45 +40,20 @@ void split(const INPUT_STRING & input, const DELIMITER_STRING & delimiter, STRIN
 /// @return the next token or an empty string if no more tokens.
 std::string nextToken(const std::vector<std::string> & tokens, size_t & pos);
 
-/// @brief Convert a string to uint32
+/// @brief Convert a string to unsigned number
 /// @param input the input string.
-/// @return the converted number or INVALID_UINT32 if the string ill-formed.
-uint32_t toUint32(const std::string & input);
+/// @return the converted number or INVALID_UNSIGNED if the string ill-formed.
+liquibook::book::Quantity toNative(const std::string & input);
 
-/// @brief Convert a string to int32
+/// @brief Convert a string to signed number
 /// @param input the input string.
 /// @return the converted number or INVALID_INT32 if the string ill-formed.
-uint32_t toInt32(const std::string & input);
+liquibook::book::QuantityDelta toNativeSigned(const std::string & input);
 
 /// @brief Convert a string to Price
 /// @param input the input string which may be a number or "MARKET", "MKT", etc.
-/// @return the converted price (MARKET is 0) or INVALID_UINT32 if the string ill-formed.
+/// @return the converted price (MARKET is 0) or INVALID_UNSIGNED if the string ill-formed.
 liquibook::book::Price stringToPrice(const std::string & input);
-
-/// @brief Display a prompt and ask the console user for a string.
-/// @param prompt What to display
-/// @returns what the user typed.
-std::string promptForString(const std::string & prompt, bool uppercase = true);
-
-/// @brief Display a prompt and ask the console user for a price.
-/// @param prompt What to display
-/// @returns what the user typed converted to a price.
-liquibook::book::Price promptForPrice(const std::string & prompt);
-
-/// @brief Display a prompt and ask the console user for a uint32.
-/// @param prompt What to display
-/// @returns what the user typed converted to a uint32.
-uint32_t promptForUint32(const std::string & prompt);
-
-/// @brief Display a prompt and ask the console user for a int32.
-/// @param prompt What to display
-/// @returns what the user typed converted to a int32.
-int32_t promptForInt32(const std::string & prompt);
-
-/// @brief Display a prompt and ask the console user for "yes" or "no"
-/// @param prompt What to display
-/// @returns what the user typed converted to a bool.
-bool promptForYesNo(const std::string & prompt);
 
 /// @brief Remove whitespace from the start of a string (in place)
 /// @param[inout] s is the string to be trimmed in place.

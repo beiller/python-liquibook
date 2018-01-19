@@ -9,12 +9,28 @@
 
 namespace liquibook { namespace book {
   // Types used in Liquibook
-  typedef uint32_t Price;
-  typedef uint32_t Quantity;
-  typedef uint32_t Cost;
-  typedef uint32_t FillId;
-  typedef uint32_t ChangeId;
-  typedef uint32_t OrderConditions;
+  /*typedef uint64_t Price;
+  typedef uint64_t Quantity;
+  typedef uint64_t Cost;
+  typedef int64_t PriceDelta;
+  typedef int64_t QuantityDelta;
+  typedef int64_t CostDelta;
+  typedef uint64_t FillId;
+  typedef uint64_t ChangeId;
+  typedef uint64_t OrderConditions;
+  typedef uint64_t OrderId;*/
+
+  typedef double Price;
+  typedef double Quantity;
+  typedef double Cost;
+  typedef double PriceDelta;
+  typedef double QuantityDelta;
+  typedef double CostDelta;
+  typedef uint64_t FillId;
+  typedef uint64_t ChangeId;
+  typedef uint64_t OrderConditions;
+  typedef uint64_t OrderId;
+
 
   enum OrderCondition {
     oc_no_conditions = 0,
@@ -28,7 +44,7 @@ namespace liquibook { namespace book {
   // Constants used in liquibook API
   const Price MARKET_ORDER_PRICE(0);
   const Price PRICE_UNCHANGED(0);
-  const int32_t SIZE_UNCHANGED(0);
+  const Quantity SIZE_UNCHANGED(0);
   }
 
 } } // namespace
