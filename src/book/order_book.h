@@ -101,7 +101,7 @@ public:
   /// @param new_price the new order price, or PRICE_UNCHANGED
   /// @return true if the replace resulted in a fill
   virtual bool replace(const OrderPtr& order, 
-                       int32_t size_delta = SIZE_UNCHANGED,
+                       QuantityDelta size_delta = SIZE_UNCHANGED,
                        Price new_price = PRICE_UNCHANGED);
 
   /// @brief Set the current market price
@@ -474,7 +474,7 @@ template <class OrderPtr>
 bool
 OrderBook<OrderPtr>::replace(
   const OrderPtr& order, 
-  int32_t size_delta,
+  QuantityDelta size_delta,
   Price new_price)
 {
   bool matched = false;
@@ -490,10 +490,10 @@ OrderBook<OrderPtr>::replace(
     // If this is a valid replace
     const Tracker& tracker = pos->second;
     // If there is not enough open quantity for the size reduction
-    if (size_delta < 0 && ((int)tracker.open_qty() < -size_delta)) 
+    if (size_delta < 0 && ((QuantityDelta)tracker.open_qty() < -size_delta)) 
     {
       // get rid of as much as we can
-      size_delta = -int(tracker.open_qty());
+      size_delta = -QuantityDelta(tracker.open_qty());
       if(size_delta == 0)
       {
         // if there is nothing to get rid of
@@ -918,7 +918,7 @@ OrderBook<OrderPtr>::try_create_deferred_trades(
 {
   Quantity traded = 0;
   // create a vector of proposed trade quantities:
-  std::vector<int> fills(deferred_matches.size());
+  std::vector<QuantityDelta> fills(deferred_matches.size());
   std::fill(fills.begin(), fills.end(), 0);
   Quantity foundQty = 0;
   auto pos = deferred_matches.begin(); 

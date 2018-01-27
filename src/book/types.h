@@ -26,10 +26,13 @@ namespace liquibook { namespace book {
   typedef double PriceDelta;
   typedef double QuantityDelta;
   typedef double CostDelta;
+  //smallest possible quantity:
+  const Quantity Epsilon = 0.00000001;
   typedef uint64_t FillId;
   typedef uint64_t ChangeId;
   typedef uint64_t OrderConditions;
   typedef uint64_t OrderId;
+
 
 
   enum OrderCondition {
