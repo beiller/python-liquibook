@@ -86,7 +86,7 @@ void
 OrderTracker<OrderPtr>::change_qty(QuantityDelta delta)
 {
   if ((delta < 0 && 
-      (QuantityDelta)open_qty_ < std::abs((QuantityDelta)delta))) {
+      (QuantityDelta)open_qty_ < fabs(delta))) {
     throw 
         std::runtime_error("Replace size reduction larger than open quantity");
   }
