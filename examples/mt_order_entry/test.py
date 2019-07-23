@@ -4,10 +4,10 @@ import time
 import uuid
 import json
 
-def my_fucking_callback(code, data):
+def my_test_callback(code, data):
 	print(code, json.loads(data.strip()))
 
-liquibook.set_callback(my_fucking_callback)
+liquibook.set_callback(my_test_callback)
 
 def generate_order_id():
 	return str(uuid.uuid4())
@@ -45,4 +45,5 @@ def modify_test():
 	liquibook.foo(my_id, 'CANCEL #{} ;'.format(my_id))
 		
 
-random_test()
+if __name__ == "__main__":
+	random_test()
